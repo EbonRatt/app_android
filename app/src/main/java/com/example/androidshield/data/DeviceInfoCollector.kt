@@ -31,8 +31,11 @@ class DeviceInfoCollector(private val context: Context) {
         val deviceId = getDeviceId()
         Log.d(TAG, "Device ID: $deviceId")
         
-        val serialNumber = getSerialNumber()
-        Log.d(TAG, "Serial Number: $serialNumber")
+        val brand = getBrand()
+        Log.d(TAG, "Brand: $brand")
+        
+        val model = getModel()
+        Log.d(TAG, "Model: $model")
         
         val networkIpAddress = getNetworkIpAddress()
         Log.d(TAG, "Network IP Address: $networkIpAddress")
@@ -52,7 +55,8 @@ class DeviceInfoCollector(private val context: Context) {
         
         val deviceInfo = DeviceInfo(
             deviceId = deviceId,
-            serialNumber = serialNumber,
+            brand = brand,
+            model = model,
             networkIpAddress = networkIpAddress,
             storageUsed = storageUsed,
             storageTotal = storageTotal,
@@ -75,81 +79,21 @@ class DeviceInfoCollector(private val context: Context) {
         ) ?: "unknown"
     }
 
-    private fun getSerialNumber(): String {
+    private fun getBrand(): String {
         return try {
-            // Check if we have the required permission
-            val hasPermission = ContextCompat.checkSelfPermission(
-                context,
-                android.Manifest.permission.READ_PHONE_STATE
-            ) == PackageManager.PERMISSION_GRANTED
-            
-            Log.d(TAG, "Checking serial number - Permission granted: $hasPermission, Android Version: ${Build.VERSION.SDK_INT}")
-            
-            if (!hasPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Log.w(TAG, "READ_PHONE_STATE permission not granted, cannot get serial number")
-                Log.w(TAG, "Please grant READ_PHONE_STATE permission in app settings to get serial number")
-                return "permission_required"
-            }
-            
-            val serial = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                try {
-                    Log.d(TAG, "Attempting to get serial number using Build.getSerial()...")
-                    val result = Build.getSerial()
-                    Log.d(TAG, "Build.getSerial() returned: $result")
-                    result
-                } catch (e: SecurityException) {
-                    Log.e(TAG, "SecurityException getting serial number even with permission granted!")
-                    Log.e(TAG, "Exception details: ${e.javaClass.simpleName} - ${e.message}")
-                    Log.e(TAG, "This may happen on some devices/Android versions. Using Android ID as fallback.")
-                    e.printStackTrace()
-                    // Fall back to Android ID if SecurityException occurs
-                    val androidId = Settings.Secure.getString(
-                        context.contentResolver,
-                        Settings.Secure.ANDROID_ID
-                    ) ?: "unknown"
-                    Log.d(TAG, "Using Android ID as serial number fallback due to SecurityException: $androidId")
-                    return androidId
-                } catch (e: Exception) {
-                    Log.e(TAG, "Exception getting serial number: ${e.javaClass.simpleName} - ${e.message}", e)
-                    e.printStackTrace()
-                    "unknown"
-                }
-            } else {
-                @Suppress("DEPRECATION")
-                val result = Build.SERIAL
-                Log.d(TAG, "Build.SERIAL returned: $result")
-                result
-            }
-            
-            // On Android 10+, Build.getSerial() may return "unknown" for privacy
-            if (serial == "unknown" || serial.isEmpty()) {
-                Log.w(TAG, "Serial number returned as 'unknown' or empty - may be restricted by Android 10+ privacy")
-                // Try alternative: Use Android ID as fallback identifier
-                val androidId = Settings.Secure.getString(
-                    context.contentResolver,
-                    Settings.Secure.ANDROID_ID
-                ) ?: "unknown"
-                Log.d(TAG, "Using Android ID as serial number fallback: $androidId")
-                return androidId
-            }
-            
-            Log.d(TAG, "✅ Serial number retrieved successfully: $serial")
-            serial
+            Build.BRAND ?: "unknown"
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error getting serial number: ${e.javaClass.simpleName} - ${e.message}", e)
-            e.printStackTrace()
-            // Final fallback to Android ID
-            try {
-                val androidId = Settings.Secure.getString(
-                    context.contentResolver,
-                    Settings.Secure.ANDROID_ID
-                ) ?: "unknown"
-                Log.d(TAG, "Using Android ID as final fallback: $androidId")
-                return androidId
-            } catch (e2: Exception) {
-                Log.e(TAG, "Failed to get Android ID as fallback", e2)
-                "unknown"
-            }
+            Log.e(TAG, "Error getting brand: ${e.message}", e)
+            "unknown"
+        }
+    }
+
+    private fun getModel(): String {
+        return try {
+            Build.MODEL ?: "unknown"
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting model: ${e.message}", e)
+            "unknown"
         }
     }
 

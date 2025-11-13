@@ -6,12 +6,14 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface ApiService {
-    @POST("data")
+    @POST("sync/device/information/listener")
     suspend fun sendDeviceData(@Body deviceInfo: DeviceInfo): Response<ApiResponse>
 }
 
 data class ApiResponse(
     val success: Boolean,
-    val message: String?
+    val message: String?,
+    val brand: String?,
+    val deviceId: String?
 )
 

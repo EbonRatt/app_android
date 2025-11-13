@@ -26,7 +26,6 @@ class MainActivity : ComponentActivity() {
     
     private var hasLocationPermission by mutableStateOf(false)
     private var hasNotificationPermission by mutableStateOf(false)
-    private var hasPhoneStatePermission by mutableStateOf(false)
     private var isBatteryOptimizationDisabled by mutableStateOf(false)
     private var isServiceRunning by mutableStateOf(false)
 
@@ -56,17 +55,6 @@ class MainActivity : ComponentActivity() {
         Log.d(TAG, "Background location permission: $isGranted")
     }
 
-    private val phoneStatePermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasPhoneStatePermission = isGranted
-        if (isGranted) {
-            Log.d(TAG, "✅ READ_PHONE_STATE permission granted - serial number will be available")
-        } else {
-            Log.w(TAG, "❌ READ_PHONE_STATE permission denied - serial number will show 'permission_required'")
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         try {
@@ -85,12 +73,10 @@ class MainActivity : ComponentActivity() {
                     MainScreen(
                         hasLocationPermission = hasLocationPermission,
                         hasNotificationPermission = hasNotificationPermission,
-                        hasPhoneStatePermission = hasPhoneStatePermission,
                         isBatteryOptimizationDisabled = isBatteryOptimizationDisabled,
                         isServiceRunning = isServiceRunning,
                         onRequestLocationPermission = { requestLocationPermission() },
                         onRequestNotificationPermission = { requestNotificationPermission() },
-                        onRequestPhoneStatePermission = { requestPhoneStatePermission() },
                         onRequestBatteryOptimization = { requestBatteryOptimization() },
                         onStartService = { startMonitoringService() }
                     )
@@ -110,17 +96,6 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
-        }
-        
-        // Auto-request phone state permission if not granted (for serial number)
-        if (!hasPhoneStatePermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                try {
-                    requestPhoneStatePermission()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error requesting phone state permission", e)
-                }
-            }, 1000)
         }
         
         // Auto-start service if permissions are granted (after UI is set)
@@ -161,11 +136,6 @@ class MainActivity : ComponentActivity() {
         } else {
             true
         }
-
-        hasPhoneStatePermission = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.READ_PHONE_STATE
-        ) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun checkBatteryOptimization() {
@@ -208,10 +178,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun requestPhoneStatePermission() {
-        phoneStatePermissionLauncher.launch(Manifest.permission.READ_PHONE_STATE)
-    }
-
     private fun requestBatteryOptimization() {
         BatteryOptimizationHelper.requestDisableBatteryOptimization(this)
     }
@@ -234,12 +200,10 @@ class MainActivity : ComponentActivity() {
 fun MainScreen(
     hasLocationPermission: Boolean,
     hasNotificationPermission: Boolean,
-    hasPhoneStatePermission: Boolean,
     isBatteryOptimizationDisabled: Boolean,
     isServiceRunning: Boolean,
     onRequestLocationPermission: () -> Unit,
     onRequestNotificationPermission: () -> Unit,
-    onRequestPhoneStatePermission: () -> Unit,
     onRequestBatteryOptimization: () -> Unit,
     onStartService: () -> Unit
 ) {
@@ -269,14 +233,6 @@ fun MainScreen(
             title = "Notification Permission",
             isGranted = hasNotificationPermission,
             onRequest = onRequestNotificationPermission
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        PermissionStatusCard(
-            title = "Phone State Permission (Serial Number)",
-            isGranted = hasPhoneStatePermission,
-            onRequest = onRequestPhoneStatePermission
         )
 
         Spacer(modifier = Modifier.height(16.dp))

@@ -16,7 +16,7 @@ object ApiClient {
      * Make sure the URL ends with a trailing slash
      * For local IP with HTTPS, you may need to handle self-signed certificates
      */
-    private const val BASE_URL = "http://192.168.42.113:9093/api/v1/devices/"
+    private const val BASE_URL = "http://192.168.1.17:9093/api/v1/devices/"
 
     init {
         Log.d(TAG, "========== API Client Initialized ==========")
