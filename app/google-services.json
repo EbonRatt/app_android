@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "235418914481",
+    "project_id": "adms-notification",
+    "storage_bucket": "adms-notification.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:235418914481:android:65483fd6fed3e685f8dc90",
+        "android_client_info": {
+          "package_name": "com.kshrd.admsnotificationservice"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDc10N9gm6pV14MdspFmia4QHhSZsx4jlA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

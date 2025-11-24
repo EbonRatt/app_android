@@ -8,7 +8,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.example.androidshield.MainActivity
-import com.example.androidshield.R
+import com.kshrd.admsnotificationservice.R
 import com.example.androidshield.api.ApiClient
 import com.example.androidshield.data.DeviceInfoCollector
 import com.example.androidshield.util.WorkManagerHelper
@@ -98,12 +98,12 @@ class DeviceMonitoringService : Service() {
         try {
             Log.d(TAG, "========== Starting Data Collection & Send ==========")
             Log.d(TAG, "Timestamp: ${System.currentTimeMillis()}")
-            
+
             // Collect device info
             Log.d(TAG, "Step 1: Collecting device information...")
             val deviceInfo = deviceInfoCollector.collectDeviceInfo()
             Log.d(TAG, "Step 1 Complete: Device info collected")
-            
+
             // Prepare API call
             Log.d(TAG, "Step 2: Preparing to send data to API...")
             Log.d(TAG, "API Endpoint: http://192.168.42.113:9093/api/v1/devices/data")
@@ -119,17 +119,17 @@ class DeviceMonitoringService : Service() {
             Log.d(TAG, "  - batteryPercentage: ${deviceInfo.batteryPercentage}%")
             Log.d(TAG, "  - isCharging: ${deviceInfo.isCharging}")
             Log.d(TAG, "  - timestamp: ${deviceInfo.timestamp}")
-            
+
             // Send to API
             Log.d(TAG, "Step 3: Sending HTTP POST request to API...")
             val response = apiService.sendDeviceData(deviceInfo)
-            
+
             // Log response
             Log.d(TAG, "Step 4: API Response received")
             Log.d(TAG, "  - Status Code: ${response.code()}")
             Log.d(TAG, "  - Is Successful: ${response.isSuccessful}")
             Log.d(TAG, "  - Response Message: ${response.message()}")
-            
+
             if (response.isSuccessful) {
                 val responseBody = response.body()
                 Log.d(TAG, "  - Response Body: $responseBody")
@@ -139,7 +139,7 @@ class DeviceMonitoringService : Service() {
                 Log.e(TAG, "  - Error Body: $errorBody")
                 Log.e(TAG, "❌ FAILED: Failed to send data - Status: ${response.code()}, Message: ${response.message()}")
             }
-            
+
             Log.d(TAG, "========== Data Collection & Send Complete ==========")
         } catch (e: Exception) {
             Log.e(TAG, "❌ EXCEPTION in collectAndSendData", e)
@@ -223,4 +223,3 @@ class DeviceMonitoringService : Service() {
         }
     }
 }
-

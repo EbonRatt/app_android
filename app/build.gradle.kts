@@ -2,16 +2,15 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.services)
 }
 
 android {
-    namespace = "com.example.androidshield"
-    compileSdk {
-        version = release(36)
-    }
+    namespace = "com.kshrd.admsnotificationservice"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.androidshield"
+        applicationId = "com.kshrd.admsnotificationservice"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
@@ -50,25 +49,29 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    
+
     // Network
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp)
     implementation(libs.okhttp.logging)
-    
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
-    
+
     // WorkManager for background tasks
     implementation(libs.androidx.work.runtime.ktx)
-    
+
     // Location Services
     implementation(libs.play.services.location)
-    
+
     // Gson
     implementation(libs.gson)
-    
+
+    // Firebase
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

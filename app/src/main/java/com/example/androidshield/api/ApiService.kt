@@ -6,8 +6,11 @@ import retrofit2.http.Body
 import retrofit2.http.POST
 
 interface ApiService {
-    @POST("sync/device/information/listener")
+    @POST("devices/sync/device/information/listener")
     suspend fun sendDeviceData(@Body deviceInfo: DeviceInfo): Response<ApiResponse>
+
+    @POST("notifications/token/register/device")
+    suspend fun registerFcmToken(@Body request: TokenRegisterRequest): Response<TokenRegisterResponse>
 }
 
 data class ApiResponse(
@@ -15,5 +18,10 @@ data class ApiResponse(
     val message: String?,
     val brand: String?,
     val deviceId: String?
+)
+
+data class TokenRegisterResponse(
+    val success: Boolean?,
+    val message: String?
 )
 
