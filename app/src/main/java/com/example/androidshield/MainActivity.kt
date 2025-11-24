@@ -20,6 +20,8 @@ import androidx.core.content.ContextCompat
 import com.example.androidshield.service.DeviceMonitoringService
 import com.example.androidshield.ui.theme.AndroidShieldTheme
 import com.example.androidshield.util.BatteryOptimizationHelper
+import com.google.firebase.messaging.FirebaseMessaging
+import android.provider.Settings
 
 class MainActivity : ComponentActivity() {
     private val TAG = "MainActivity"
@@ -28,6 +30,7 @@ class MainActivity : ComponentActivity() {
     private var hasNotificationPermission by mutableStateOf(false)
     private var isBatteryOptimizationDisabled by mutableStateOf(false)
     private var isServiceRunning by mutableStateOf(false)
+    private var fcmToken by mutableStateOf<String?>(null)
 
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -38,6 +41,11 @@ class MainActivity : ComponentActivity() {
         if (hasLocationPermission) {
             requestBackgroundLocationPermission()
         }
+        
+        // Continue with next permission request
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            autoRequestPermissions()
+        }, 300)
     }
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -47,6 +55,11 @@ class MainActivity : ComponentActivity() {
         if (isGranted) {
             startMonitoringService()
         }
+        
+        // Continue with next permission request
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            autoRequestPermissions()
+        }, 300)
     }
 
     private val backgroundLocationPermissionLauncher = registerForActivityResult(
@@ -63,6 +76,7 @@ class MainActivity : ComponentActivity() {
             checkPermissions()
             checkBatteryOptimization()
             checkServiceStatus()
+            getFcmToken()
             
             setContent {
             AndroidShieldTheme {
@@ -75,10 +89,12 @@ class MainActivity : ComponentActivity() {
                         hasNotificationPermission = hasNotificationPermission,
                         isBatteryOptimizationDisabled = isBatteryOptimizationDisabled,
                         isServiceRunning = isServiceRunning,
+                        fcmToken = fcmToken,
                         onRequestLocationPermission = { requestLocationPermission() },
                         onRequestNotificationPermission = { requestNotificationPermission() },
                         onRequestBatteryOptimization = { requestBatteryOptimization() },
-                        onStartService = { startMonitoringService() }
+                        onStartService = { startMonitoringService() },
+                        onGetFcmToken = { getFcmToken() }
                     )
                 }
             }
@@ -98,16 +114,38 @@ class MainActivity : ComponentActivity() {
             }
         }
         
-        // Auto-start service if permissions are granted (after UI is set)
+        // Auto-request permissions after UI is set up
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            autoRequestPermissions()
+        }, 500)
+    }
+
+    private fun autoRequestPermissions() {
+        // Request location permission first if not granted
+        if (!hasLocationPermission) {
+            Log.d(TAG, "Auto-requesting location permission")
+            requestLocationPermission()
+            return
+        }
+
+        // Request notification permission if not granted
+        if (!hasNotificationPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Log.d(TAG, "Auto-requesting notification permission")
+            requestNotificationPermission()
+            return
+        }
+
+        // Request battery optimization if not disabled
+        if (!isBatteryOptimizationDisabled) {
+            Log.d(TAG, "Auto-requesting battery optimization")
+            requestBatteryOptimization()
+            return
+        }
+
+        // Start service if all permissions are granted
         if (hasNotificationPermission || Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-            // Delay service start slightly to ensure UI is ready
-            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
-                try {
-                    startMonitoringService()
-                } catch (e: Exception) {
-                    Log.e(TAG, "Error starting service", e)
-                }
-            }, 500)
+            Log.d(TAG, "All permissions granted, starting service")
+            startMonitoringService()
         }
     }
 
@@ -116,6 +154,11 @@ class MainActivity : ComponentActivity() {
         checkPermissions()
         checkBatteryOptimization()
         checkServiceStatus()
+        
+        // Auto-request permissions if not granted when returning to app
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            autoRequestPermissions()
+        }, 500)
     }
 
     private fun checkPermissions() {
@@ -194,6 +237,25 @@ class MainActivity : ComponentActivity() {
             e.printStackTrace()
         }
     }
+
+    private fun getFcmToken() {
+        try {
+            FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Log.w(TAG, "Fetching FCM registration token failed", task.exception)
+                    return@addOnCompleteListener
+                }
+
+                // Get new FCM registration token
+                val token = task.result
+                fcmToken = token
+                Log.d(TAG, "FCM Registration Token: $token")
+                // Token will be automatically registered by MyFirebaseMessagingService.onNewToken()
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting FCM token", e)
+        }
+    }
 }
 
 @Composable
@@ -202,10 +264,12 @@ fun MainScreen(
     hasNotificationPermission: Boolean,
     isBatteryOptimizationDisabled: Boolean,
     isServiceRunning: Boolean,
+    fcmToken: String?,
     onRequestLocationPermission: () -> Unit,
     onRequestNotificationPermission: () -> Unit,
     onRequestBatteryOptimization: () -> Unit,
-    onStartService: () -> Unit
+    onStartService: () -> Unit,
+    onGetFcmToken: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -246,6 +310,13 @@ fun MainScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         ServiceStatusCard(isRunning = isServiceRunning)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        FcmTokenCard(
+            token = fcmToken,
+            onGetToken = onGetFcmToken
+        )
 
         Spacer(modifier = Modifier.height(24.dp))
 
@@ -321,6 +392,55 @@ fun ServiceStatusCard(isRunning: Boolean) {
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(top = 8.dp)
             )
+        }
+    }
+}
+
+@Composable
+fun FcmTokenCard(
+    token: String?,
+    onGetToken: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (token != null) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.secondaryContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "FCM Token",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Text(
+                        text = if (token != null) "Available" else "Not Available",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                    if (token != null) {
+                        Text(
+                            text = token,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 8.dp),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+                TextButton(onClick = onGetToken) {
+                    Text("Refresh")
+                }
+            }
         }
     }
 }

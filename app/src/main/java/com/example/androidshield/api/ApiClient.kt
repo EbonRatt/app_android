@@ -11,17 +11,20 @@ object ApiClient {
     private const val TAG = "ApiClient"
     
     /**
-     * IMPORTANT: Replace this with your actual backend API base URL
-     * Example: "https://api.yourdomain.com/api/"
-     * Make sure the URL ends with a trailing slash
-     * For local IP with HTTPS, you may need to handle self-signed certificates
+     * Base URLs for different endpoints
+     * Make sure the URLs end with a trailing slash
      */
-    private const val BASE_URL = "http://192.168.42.79:9093/api/v1/devices/"
+    private const val BASE_URL = "https://device.amapi.site/api/v1/devices/"
+    const val BASE_URL_Notification = "https://notification.amapi.site/api/v1/"
+    
+    // Full endpoint URLs
+    const val FCM_TOKEN_ENDPOINT = "${BASE_URL_Notification}notifications/token/register/device"
 
     init {
         Log.d(TAG, "========== API Client Initialized ==========")
         Log.d(TAG, "Base URL: $BASE_URL")
-        Log.d(TAG, "Full Endpoint URL: ${BASE_URL}data")
+        Log.d(TAG, "Device Data Endpoint: ${BASE_URL}sync/device/information/listener")
+        Log.d(TAG, "FCM Token Endpoint: $FCM_TOKEN_ENDPOINT")
     }
 
     private val loggingInterceptor = HttpLoggingInterceptor(object : HttpLoggingInterceptor.Logger {
@@ -43,6 +46,7 @@ object ApiClient {
         // .sslSocketFactory(createInsecureSSLSocketFactory(), createInsecureTrustManager())
         .build()
 
+    // Use a dummy base URL since we're using @Url for full URLs
     private val retrofit = Retrofit.Builder()
         .baseUrl(BASE_URL)
         .client(okHttpClient)

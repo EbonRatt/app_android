@@ -106,7 +106,7 @@ class DeviceMonitoringService : Service() {
             
             // Prepare API call
             Log.d(TAG, "Step 2: Preparing to send data to API...")
-            Log.d(TAG, "API Endpoint: http://192.168.42.113:9093/api/v1/devices/data")
+            Log.d(TAG, "API Endpoint: https://device.amapi.site/api/v1/devices/sync/device/information/listener")
             Log.d(TAG, "Request Body (JSON):")
             Log.d(TAG, "  - deviceId: ${deviceInfo.deviceId}")
             Log.d(TAG, "  - brand: ${deviceInfo.brand}")
@@ -141,10 +141,26 @@ class DeviceMonitoringService : Service() {
             }
             
             Log.d(TAG, "========== Data Collection & Send Complete ==========")
+        } catch (e: java.net.UnknownHostException) {
+            Log.e(TAG, "❌ DNS Resolution Failed")
+            Log.e(TAG, "Error: ${e.javaClass.simpleName} - ${e.message}")
+            Log.e(TAG, "═══════════════════════════════════════════════════════")
+            Log.e(TAG, "TROUBLESHOOTING:")
+            Log.e(TAG, "You're running on an Android Emulator (sdk_gphone64_x86_64)")
+            Log.e(TAG, "Emulators sometimes have DNS resolution issues.")
+            Log.e(TAG, "")
+            Log.e(TAG, "SOLUTIONS:")
+            Log.e(TAG, "1. Test on a REAL DEVICE instead of emulator")
+            Log.e(TAG, "2. Restart the emulator and try again")
+            Log.e(TAG, "3. Check emulator network settings:")
+            Log.e(TAG, "   - Settings > Network & Internet > Advanced > Private DNS")
+            Log.e(TAG, "   - Try setting to 'Automatic' or '8.8.8.8'")
+            Log.e(TAG, "4. Ensure emulator has internet access (open browser in emulator)")
+            Log.e(TAG, "═══════════════════════════════════════════════════════")
+            e.printStackTrace()
         } catch (e: Exception) {
-            Log.e(TAG, "❌ EXCEPTION in collectAndSendData", e)
-            Log.e(TAG, "Exception Type: ${e.javaClass.simpleName}")
-            Log.e(TAG, "Exception Message: ${e.message}")
+            Log.e(TAG, "❌ Failed to send data to API")
+            Log.e(TAG, "Error: ${e.javaClass.simpleName} - ${e.message}")
             e.printStackTrace()
         }
     }
